@@ -1,0 +1,3 @@
+00-pre-requistites/credentials/*quay-image-registry.yaml
+00-pre-requistites/credentials/*github-repo.yaml
+quarkus-hello-world/00-sample/*

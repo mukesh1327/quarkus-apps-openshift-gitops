@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    chains.tekton.dev/signed: 'true'
+
+  name: quarkus-jvm-helloworld-pr
+
+  labels:
+    tekton.dev/pipeline: quarkus-jvm-helloworld
+
+spec:
+
+  pipelineRef:
+    name: quarkus-jvm-helloworld
+
+  taskRunTemplate:
+    serviceAccountName: pipeline
+
+  timeouts:
+    pipeline: 1h0m0s
+
+  workspaces:
+    - name: source-code
+      persistentVolumeClaim:
+        claimName: source-code-workspace
+    - name: maven-packages
+      persistentVolumeClaim:
+        claimName: maven-workspace
+        
