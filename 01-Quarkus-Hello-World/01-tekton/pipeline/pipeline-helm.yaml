@@ -2,12 +2,14 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
 
-  name: quarkus-jvm-helloworld
+  name: quarkus-jvm-helloworld-helm
 
 spec:
 
+
   tasks:
 
+# Project clone
     - name: clone-project
       params:
         - name: CRT_FILENAME
@@ -29,7 +31,7 @@ spec:
         - name: SSL_VERIFY
           value: 'true'
         - name: URL
-          value: 'https://github.com/mukesh1327/quarkus-apps.git'
+          value: https://github.com/mukesh1327/quarkus-apps.git
         - name: REVISION
           value: main
         - name: REFSPEC
@@ -53,7 +55,54 @@ spec:
         - name: output
           workspace: source-code
 
+# Manifest clone
+    - name: clone-manifests
+      params:
+        - name: CRT_FILENAME
+          value: ca-bundle.crt
+        - name: HTTP_PROXY
+          value: ''
+        - name: HTTPS_PROXY
+          value: ''
+        - name: NO_PROXY
+          value: ''
+        - name: SUBDIRECTORY
+          value: ''
+        - name: USER_HOME
+          value: /home/git
+        - name: DELETE_EXISTING
+          value: 'true'
+        - name: VERBOSE
+          value: 'false'
+        - name: SSL_VERIFY
+          value: 'true'
+        - name: URL
+          value: https://github.com/mukesh1327/quarkus-apps-openshift-gitops.git
+        - name: REVISION
+          value: main
+        - name: REFSPEC
+          value: ''
+        - name: SUBMODULES
+          value: 'true'
+        - name: DEPTH
+          value: '1'
+        - name: SPARSE_CHECKOUT_DIRECTORIES
+          value: 01-Quarkus-Hello-World
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: output
+          workspace: manifests
 
+
+# Maven junit unit test
     - name: unit-test
       params:
         - name: GOALS
@@ -65,6 +114,7 @@ spec:
           value: 01-Quarkus-Hello-World
       runAfter:
         - clone-project
+        - clone-manifests
       taskRef:
         params:
           - name: kind
@@ -80,7 +130,7 @@ spec:
         - name: maven_settings
           workspace: maven-packages
 
-
+# Maven package
     - name: maven-package
       params:
         - name: GOALS
@@ -107,11 +157,12 @@ spec:
         - name: maven_settings
           workspace: maven-packages
 
-
+# Container image build
     - name: buildah-docker-jvm
       params:
         - name: IMAGE
-          value: quay.io/mukeshs1306/quarkus-helloworld
+          value: >-
+            quay.io/mukeshs1306/$(context.pipeline.name):$(tasks.clone-project.results.COMMIT)
         - name: DOCKERFILE
           value: ./src/main/docker/Dockerfile.jvm
         - name: BUILD_ARGS
@@ -147,6 +198,51 @@ spec:
         - name: source
           workspace: source-code
 
+# Helm upgrade install          
+    - name: helm-upgrade-from-source
+      params:
+        - name: charts_dir
+          value: 01-Quarkus-Hello-World/01-tekton/helm
+        - name: release_version
+          value: v1.0.0
+        - name: release_name
+          value: quarkus-helloworld
+        - name: release_namespace
+          value: devops-gitops-demo
+        - name: overwrite_values
+          value: image.tag=$(tasks.clone-project.results.COMMIT)
+        - name: values_file
+          value: values.yaml
+        - name: helm_image
+          value: >-
+            docker.io/lachlanevenson/k8s-helm@sha256:5c792f29950b388de24e7448d378881f68b3df73a7b30769a6aa861061fd08ae
+        - name: upgrade_extra_params
+          value: ''
+      runAfter:
+        - buildah-docker-jvm
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: helm-upgrade-from-source
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: source
+          workspace: manifests
+
+
   workspaces:
     - name: source-code
+      optional: false
     - name: maven-packages
+      optional: false
+    - name: manifests
+      optional: false
+
+
+
+  params: []
+  finally: []

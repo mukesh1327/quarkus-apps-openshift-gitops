@@ -4,15 +4,16 @@ metadata:
   annotations:
     chains.tekton.dev/signed: 'true'
 
-  name: quarkus-jvm-helloworld-pr
+  name: quarkus-jvm-helloworld-helm-pr
 
   labels:
-    tekton.dev/pipeline: quarkus-jvm-helloworld
+    tekton.dev/pipeline: quarkus-jvm-helloworld-helm
 
 spec:
 
   pipelineRef:
-    name: quarkus-jvm-helloworld
+    name: quarkus-jvm-helloworld-helm
+
 
   taskRunTemplate:
     serviceAccountName: pipeline
@@ -27,4 +28,7 @@ spec:
     - name: maven-packages
       persistentVolumeClaim:
         claimName: maven-workspace
+    - name: manifests
+      persistentVolumeClaim:
+        claimName: manifests-workspace
         
