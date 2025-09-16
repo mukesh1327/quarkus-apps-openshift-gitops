@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+
+  name: quarkus-hello
+  namespace: openshift-gitops
+
+spec:
+  destination:
+    namespace: test
+    server: 'https://kubernetes.default.svc'
+  project: default
+  source:
+    path: 01-Quarkus-Hello-World/01-tekton/helm
+    repoURL: 'https://github.com/mukesh1327/quarkus-apps-openshift-gitops.git'
+    targetRevision: HEAD
+  syncPolicy:
+    retry:
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m0s
+      limit: 2
+    syncOptions:
+      - PruneLast=true
