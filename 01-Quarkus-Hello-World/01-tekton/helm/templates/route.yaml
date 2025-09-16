@@ -13,7 +13,7 @@ metadata:
     {{- include "quarkus-jvm-helloworld.labels" . | nindent 4 }}
 
 spec:
-  {{- if .Values.route.subdomain }}
+  {{- if .Values.route.hostname }}
   subdomain: {{ .Values.route.hostname }}
   {{- end }}
   
