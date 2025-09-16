@@ -1,6 +1,2 @@
-# Openshift pipelines CI CD
+# Hello World code
 
-
-## Openshift Pipleines - Tekton
-
-## Openshift Gitops - ArgoCD
